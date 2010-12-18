@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+
+{% block subtitle %} - Really simple webchat{% endblock %}
+
+{% block content %}
+<div id="chat">
+	<div id="history">
+		<div class="line">
+			<div class="name">@kruithoph</div>
+			<div class="text">This is a line of sample text.</div>
+		</div>
+	</div>
+	<div id="current">
+		@{{name}} <input type="text" value"" size="80" />
+	</div>
+</div>
+{% endblock %}

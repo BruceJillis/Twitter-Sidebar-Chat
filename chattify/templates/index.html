@@ -1,0 +1,73 @@
+{% extends "layout.html" %}
+
+{% block subtitle %} - Really simple webchat{% endblock %}
+
+{% block css %} 
+	label {
+		width: 100px;
+		padding-right: 10px;
+		display: block;
+		float: left;
+		text-align: right;
+	}
+	
+	input {
+		width: 200px;
+		float: left;
+		text-align: left;
+	}
+
+	input.button {
+		width: auto;
+	}
+	form {
+		width: 500px;
+	}
+
+	p.form-hint {
+		display: none;
+		position: absolute;
+		top: -12px;
+		right: 0px;
+		width: 180px;
+		border-top: 1px outset black;
+		border-left: 1px inset black;
+	}
+
+	.row:hover p.form-hint {
+		display: block;
+	}
+	
+	.row {
+		clear: both;
+		width: 100%;
+		float: left;
+		position: relative;
+	}
+
+
+	.clear {
+		clear: both;
+	}
+{% endblock %}
+
+{% block content %}
+<form action="/create">
+	<div class="row">
+		<label for="admin">Your Name</label>
+		<input type="text" name="admin" />
+		<p class="form-hint">This is your name in the chat, the administrative user.</p> 
+	</div>
+	<div class="row">
+		<label for="title">Title</label>
+		<input type="text" name="title" />
+		<p class="form-hint" >This value is used to create the underlying chat channels.</p> 
+	</div>
+	<br class="clear" />
+	<input type="submit" class="button" value="Create Chat!" />
+</form>
+
+<br class="clear" />
+<p>Install the automatice greasemonkey script to enable chattify integration into #newtwitter</p>
+<a href="/js/sidebarchat.user.js">Install the script!</a>
+{% endblock %}
