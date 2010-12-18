@@ -1,0 +1,5 @@
+Twitter Sidebar Chat
+
+This repository contains 2 seperate tools: 
+	a greasemonkey 'plugin' for #newtwitter that adds a new 'chat' mediatype and some simple support for managing and creating chats
+	a simple and small appengine webservice that supplies the chat API and widgets
