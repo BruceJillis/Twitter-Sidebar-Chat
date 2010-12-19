@@ -1,12 +1,23 @@
 #!/usr/bin/env python
 import os
 import md5
+from django.utils import simplejson
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import util
 from google.appengine.ext.webapp import template
+from google.appengine.api import channel
 
 # path to the template files
 TEMPLATES = os.path.join(os.path.dirname(__file__), 'templates')
+
+class SayHandler(webapp.RequestHandler):
+	def post(self):
+		data = {
+			'username': self.request.get("username"),
+			'text': self.request.get("msg")
+		}
+		key = self.request.get("key")
+		channel.send_message(key, simplejson.dumps(data))
 
 class CreateHandler(webapp.RequestHandler):
 	def get_key(self):
@@ -15,18 +26,19 @@ class CreateHandler(webapp.RequestHandler):
 		return m.hexdigest()
 
 	def get(self):
-		key = self.get_key();
-		self.redirect("/chat/" + key)
+		self.redirect("/chat/" + self.get_key() + '/' + self.request.get("username"))
 
 	def post(self):
-		key = self.get_key();
-		self.response.out.write("{'key': ' + key + '}");
+		self.response.out.write("{'key':"+ self.get_key() +"}");
 
 class ChatHandler(webapp.RequestHandler):
-	def get(self, key):
+	def get(self, key, username):
+		token = channel.create_channel(key)
 		path = os.path.join(TEMPLATES, 'chat.html')
 		self.response.out.write(template.render(path, {
-			'key': key
+			'key': key,
+			'token': token,
+			'username': username
 		}))
 
 
@@ -39,7 +51,8 @@ def main():
 	application = webapp.WSGIApplication([
 		('/', MainHandler),
 		('/create', CreateHandler),
-		(r'/chat/(.*)', ChatHandler)
+		('/say', SayHandler),
+		(r'/chat/(.*)/(.*)', ChatHandler)
 	], debug=True)
 	util.run_wsgi_app(application)
 

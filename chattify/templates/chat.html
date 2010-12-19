@@ -2,6 +2,94 @@
 
 {% block subtitle %} - Really simple webchat{% endblock %}
 
+{% block head %}
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script src='/_ah/channel/jsapi'></script>
+{% endblock %}
+
+
+{% block css %} 
+	#chat {
+		width: 500px;
+	}
+	#chat #history {
+		width: 500px;
+		clear: both;
+		float: left;
+	}
+	#chat #history .line {
+		width: 500px;
+		overflow: hidden;
+		float: left;
+		clear: both;
+	}
+	#chat #history .line .name {
+		width: 80px;
+		overflow: hidden;
+		float: left;
+	}
+	#chat #history .line .text {
+		width: 420px;
+		overflow: hidden;
+		float: right;
+	}
+	.clear {
+		clear: both;
+	}
+{% endblock %}
+
+{% block js %}
+	var state = {
+		'key': '{{ key }}',
+		'username': '{{ username }}'
+	}
+
+	var line = document.getElementById('line');
+	var chat = document.getElementById('history');
+
+	sendMessage = function(path, opt_param) {
+	  path += '?key=' + state.key;
+	  if (opt_param) {
+		path += '&' + opt_param;
+	  }
+	  var xhr = new XMLHttpRequest();
+	  xhr.open('POST', path, true);
+	  xhr.send();
+	};
+
+	onOpened = function() {
+		sendMessage('/say', 'username=' + state.username + '&msg=" has joined"');
+	};
+	
+	function addLine(username, text) {
+		var markup = [
+			'<div class="line">',
+				'<div class="name">@',username,'</div>',
+				'<div class="text">',text,'</div>',
+			'</div>'
+		]
+		var html = document.getElementById('history').innerHTML
+		document.getElementById('history').innerHTML = html + markup.join('');
+	}
+
+	onMessage = function(answer) {
+		var data = eval('('+answer.data+')');
+		addLine(data.username, data.text)
+	};
+
+    var channel = new goog.appengine.Channel('{{ token }}');
+    var socket = channel.open();
+    socket.onopen = onOpened;
+	socket.onmessage = onMessage;
+	
+	$(document).ready(function() {
+		$('#send').click(function(ev) {
+			sendMessage('/say', 'username=' + state.username + '&msg="' + $('#line').val() + '"');
+			$('#line').val('')
+		});
+	});
+{% endblock %}
+
 {% block content %}
 <div id="chat">
 	<div id="history">
@@ -10,8 +98,10 @@
 			<div class="text">This is a line of sample text.</div>
 		</div>
 	</div>
+	<br class="clear"/>
 	<div id="current">
-		@{{name}} <input type="text" value"" size="80" />
+		@{{username}} <input type="text" id="line" value"" size="60" />
+		<button id="send">send</button>
 	</div>
 </div>
 {% endblock %}
