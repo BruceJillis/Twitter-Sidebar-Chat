@@ -20,6 +20,7 @@
 	input.button {
 		width: auto;
 	}
+
 	form {
 		width: 500px;
 	}
@@ -47,6 +48,10 @@
 	
 	#install {
 		text-decoration: none;
+	}
+
+	.active {
+		float: left;
 	}
 {% endblock %}
 
@@ -78,10 +83,12 @@
 {% endblock %}
 
 {% block content %}
-<h3>Currently Active Chats</h3>
+<strong>Currently Active Chats:</strong>
+<br class="clear" />
 {% for chat in active %}
-    <h4 class="active link">{{ chat }}</h4>
+    <strong class="active link">{{ chat }}</strong>{% if not forloop.last %}, &nbsp;{% endif %}
 {% endfor %}
+<br class="clear" />
 <form id="create">
 	<div class="row">
 		<label for="channel">Chat Name</label>

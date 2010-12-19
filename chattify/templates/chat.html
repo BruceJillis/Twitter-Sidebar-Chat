@@ -28,7 +28,7 @@
 	#chat #history .line .text {
 		float: left;
 		margin-left: 5px;
-		max-width: 420px;
+		max-width: 400px;
 		word-wrap: break-word;
 	}
 	#current {
@@ -146,7 +146,8 @@
 			}
 		}
 		$(document).bind('ready', interface.ready)
-		$(window).bind('unload', interface.unload)
+		window.onbeforeunload = interface.unload;
+
 
 		var channel = new goog.appengine.Channel('{{ token }}');
 		var socket = channel.open();
