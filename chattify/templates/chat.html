@@ -4,6 +4,7 @@
 
 {% block head %}
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.7/jquery-ui.min.js"></script>
 <script src='/_ah/channel/jsapi'></script>
 {% endblock %}
 
@@ -13,25 +14,46 @@
 		width: 500px;
 	}
 	#chat #history {
-		width: 500px;
+		width: 100%;
+		height: 250px;
+		overflow-x: hidden;
+		overflow-y: scroll;
 		clear: both;
 		float: left;
 	}
 	#chat #history .line {
-		width: 500px;
+		width: 100%;
 		overflow: hidden;
 		float: left;
 		clear: both;
 	}
 	#chat #history .line .name {
-		width: 80px;
+		max-width: 80px;
 		overflow: hidden;
 		float: left;
 	}
 	#chat #history .line .text {
-		width: 420px;
+		float: left;
+		margin-left: 5px;
+		max-width: 420px;
+		word-wrap: break-word;
+	}
+	#current {
+		width: 100%;
+		float: left;
+		clear: both;
+	}
+	#current #username {
+		width: 53px;
 		overflow: hidden;
-		float: right;
+		float: left;		
+	}
+	#current #line {
+		float: left;		
+		width: 400px;
+	}
+	#current #send {
+		width: 43px;
 	}
 	.clear {
 		clear: both;
@@ -39,68 +61,87 @@
 {% endblock %}
 
 {% block js %}
-	var state = {
-		'key': '{{ key }}',
-		'username': '{{ username }}'
+	function Chat() {
+		var state = {
+			'key': '{{ key }}',
+			'username': '{{ username }}'
+		}
+
+		var interface = {
+			'ready': function() {
+				// send button
+				$('#send').button();
+				$('#send').bind('click', function(ev) {
+					// don't send empty lines
+					if( $('#line').val() == '' )
+						return;
+					// send current line
+					interface.send('/say', 'username=' + state.username + '&msg=' + $('#line').val());
+					// clean up
+					$('#line').val('')
+				});
+				// position chat widget
+				$('#chat').position({
+					'of': $('#chat').parent(),
+					'my': 'center center',
+					'at': 'center center'
+				});
+			},
+			'unload': function() {
+				// leave the channel
+				interface.send('/leave', 'username=' + state.username);
+			},
+			'message': function(answer) {
+				// send message on channel
+				var data = eval('('+answer.data+')');
+				interface.line(data.username, data.msg)
+			},
+			'opened': function(answer) {
+				// join the channel
+				interface.send('/join', 'username=' + state.username);
+			},
+			'send': function(path, opt_param) {
+				// send message
+				path += '?key=' + state.key;
+				if (opt_param) {
+					path += '&' + opt_param;
+				}
+				var xhr = new XMLHttpRequest();
+				xhr.open('POST', path, true);
+				xhr.send();
+			},
+			'line': function(username, msg) {
+				// add a new line to the buffer
+				var markup = [
+					'<div class="line">',
+						'<div class="name">@',username,'</div>',
+						'<div class="text">',msg,'</div>',
+					'</div>'
+				]
+				$('#history').html( $('#history').html() + markup.join('') );
+				$("#history").attr({ scrollTop: $("#history").attr("scrollHeight") });
+			}
+		}
+		$(document).bind('ready', interface.ready)
+		$(window).bind('unload', interface.unload)
+
+		var channel = new goog.appengine.Channel('{{ token }}');
+		var socket = channel.open();
+		socket.onopen = interface.opened;
+		socket.onmessage = interface.message;
+
+		return interface;
 	}
-
-	var line = document.getElementById('line');
-	var chat = document.getElementById('history');
-
-	sendMessage = function(path, opt_param) {
-	  path += '?key=' + state.key;
-	  if (opt_param) {
-		path += '&' + opt_param;
-	  }
-	  var xhr = new XMLHttpRequest();
-	  xhr.open('POST', path, true);
-	  xhr.send();
-	};
-
-	onOpened = function() {
-		sendMessage('/say', 'username=' + state.username + '&msg=" has joined"');
-	};
-	
-	function addLine(username, text) {
-		var markup = [
-			'<div class="line">',
-				'<div class="name">@',username,'</div>',
-				'<div class="text">',text,'</div>',
-			'</div>'
-		]
-		var html = document.getElementById('history').innerHTML
-		document.getElementById('history').innerHTML = html + markup.join('');
-	}
-
-	onMessage = function(answer) {
-		var data = eval('('+answer.data+')');
-		addLine(data.username, data.text)
-	};
-
-    var channel = new goog.appengine.Channel('{{ token }}');
-    var socket = channel.open();
-    socket.onopen = onOpened;
-	socket.onmessage = onMessage;
-	
-	$(document).ready(function() {
-		$('#send').click(function(ev) {
-			sendMessage('/say', 'username=' + state.username + '&msg="' + $('#line').val() + '"');
-			$('#line').val('')
-		});
-	});
+	var chat = new Chat();
 {% endblock %}
 
 {% block content %}
 <div id="chat">
 	<div id="history">
-		<div class="line">
-			<div class="name">@kruithoph</div>
-			<div class="text">This is a line of sample text.</div>
-		</div>
 	</div>
 	<br class="clear"/>
 	<div id="current">
-		@{{username}} <input type="text" id="line" value"" size="60" />
+		<div id="username">@{{username}}</div> <input type="text" id="line" value"" size="60" />
 		<button id="send">send</button>
 	</div>
 </div>

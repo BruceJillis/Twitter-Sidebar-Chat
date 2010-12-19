@@ -10,19 +10,49 @@ from google.appengine.api import channel
 # path to the template files
 TEMPLATES = os.path.join(os.path.dirname(__file__), 'templates')
 
+# channels/participants list
+channels = {}
+
+# send a msg to all people on a channel
+def message(key, username, msg):
+	if not key in channels:
+		return
+	data = {
+		'username': username,
+		'msg': msg
+	}
+	for name in channels[key]:
+		data['test'] = key + name
+		channel.send_message(key + name, simplejson.dumps(data))
+
+class JoinHandler(webapp.RequestHandler):
+	def post(self):
+		key = self.request.get("key")
+		username = self.request.get("username")
+		if not key in channels:
+			channels[key] = []
+		channels[key].append(username)
+		message(key, username, " has joined");
+
+class LeaveHandler(webapp.RequestHandler):
+	def post(self):
+		key = self.request.get("key")
+		username = self.request.get("username")
+		channels[key].remove(username)
+		message(key, username, " has left");
+
 class SayHandler(webapp.RequestHandler):
 	def post(self):
-		data = {
-			'username': self.request.get("username"),
-			'text': self.request.get("msg")
-		}
 		key = self.request.get("key")
-		channel.send_message(key, simplejson.dumps(data))
+		username = self.request.get("username")
+		msg = self.request.get("msg")
+		message(key, username, msg)
+
 
 class CreateHandler(webapp.RequestHandler):
 	def get_key(self):
 		m = md5.new()
-		m.update(self.request.get("title"))
+		m.update(self.request.get("channel"))
 		return m.hexdigest()
 
 	def get(self):
@@ -33,14 +63,13 @@ class CreateHandler(webapp.RequestHandler):
 
 class ChatHandler(webapp.RequestHandler):
 	def get(self, key, username):
-		token = channel.create_channel(key)
+		token = channel.create_channel(key + username)
 		path = os.path.join(TEMPLATES, 'chat.html')
 		self.response.out.write(template.render(path, {
 			'key': key,
 			'token': token,
 			'username': username
 		}))
-
 
 class MainHandler(webapp.RequestHandler):
 	def get(self):
@@ -51,6 +80,8 @@ def main():
 	application = webapp.WSGIApplication([
 		('/', MainHandler),
 		('/create', CreateHandler),
+		('/join', JoinHandler),
+		('/leave', LeaveHandler),
 		('/say', SayHandler),
 		(r'/chat/(.*)/(.*)', ChatHandler)
 	], debug=True)
