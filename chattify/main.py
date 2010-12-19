@@ -36,9 +36,6 @@ class JoinHandler(webapp.RequestHandler):
 		username = self.request.get("username")
 		if not key in channels:
 			channels[key] = []
-		if username in channels[key]:
-			channel.send_message(key + username, simplejson.dumps({'error': 'username already exists'}))
-			return;
 		channels[key].append(username)
 		message(key, username, " has joined");
 

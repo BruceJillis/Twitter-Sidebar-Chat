@@ -96,7 +96,6 @@
 				interface.send('/leave', 'username=' + state.username);
 			},
 			'error': function(msg, data) {
-				return;
 				// show error message
 				$('.content', "#dialog-message").html(msg);
 				$("#dialog-message").dialog({
