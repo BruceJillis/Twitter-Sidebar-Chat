@@ -1,14 +1,20 @@
 #!/usr/bin/env python
 import os
-import md5
+import random
 from django.utils import simplejson
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import util
 from google.appengine.ext.webapp import template
 from google.appengine.api import channel
+from google.appengine.ext import db
+
+import counter
 
 # path to the template files
 TEMPLATES = os.path.join(os.path.dirname(__file__), 'templates')
+
+# localhost / live switch
+local = os.environ['HTTP_HOST'].startswith('localhost')
 
 # channels/participants list
 channels = {}
@@ -22,7 +28,6 @@ def message(key, username, msg):
 		'msg': msg
 	}
 	for name in channels[key]:
-		data['test'] = key + name
 		channel.send_message(key + name, simplejson.dumps(data))
 
 class JoinHandler(webapp.RequestHandler):
@@ -31,6 +36,9 @@ class JoinHandler(webapp.RequestHandler):
 		username = self.request.get("username")
 		if not key in channels:
 			channels[key] = []
+		if username in channels[key]:
+			channel.send_message(key + username, simplejson.dumps({'error': 'username already exists'}))
+			return;
 		channels[key].append(username)
 		message(key, username, " has joined");
 
@@ -38,8 +46,13 @@ class LeaveHandler(webapp.RequestHandler):
 	def post(self):
 		key = self.request.get("key")
 		username = self.request.get("username")
-		channels[key].remove(username)
-		message(key, username, " has left");
+		if key in channels:
+			if username in channels[key]:
+				channels[key].remove(username)
+			if len(channels[key]) == 0:
+				del channels[key]
+			else:
+				message(key, username, " has left");
 
 class SayHandler(webapp.RequestHandler):
 	def post(self):
@@ -48,43 +61,49 @@ class SayHandler(webapp.RequestHandler):
 		msg = self.request.get("msg")
 		message(key, username, msg)
 
-
-class CreateHandler(webapp.RequestHandler):
-	def get_key(self):
-		m = md5.new()
-		m.update(self.request.get("channel"))
-		return m.hexdigest()
-
-	def get(self):
-		self.redirect("/chat/" + self.get_key() + '/' + self.request.get("username"))
-
-	def post(self):
-		self.response.out.write("{'key':"+ self.get_key() +"}");
-
 class ChatHandler(webapp.RequestHandler):
 	def get(self, key, username):
 		token = channel.create_channel(key + username)
 		path = os.path.join(TEMPLATES, 'chat.html')
+		if local:
+			host = 'http://localhost:8085/'
+		else:
+			host = 'http://chattify.appspot.com/'
+		counter.increment('users')
+		counter.increment('chats')
+		users = counter.get_count('users') + 1
 		self.response.out.write(template.render(path, {
 			'key': key,
 			'token': token,
-			'username': username
+			'username': username,
+			'host': host,
+			'users': users
 		}))
 
 class MainHandler(webapp.RequestHandler):
 	def get(self):
 		path = os.path.join(TEMPLATES, 'index.html')
-		self.response.out.write(template.render(path, {}))
+		if local:
+			host = 'http://localhost:8085/'
+		else:
+			host = 'http://chattify.appspot.com/'
+		users = counter.get_count('users') + 1
+		chats = counter.get_count('chats') + 1
+		self.response.out.write(template.render(path, {
+			'host': host,
+			'users': users,
+			'chats': chats,
+			'active': channels
+		}))
 
 def main():
 	application = webapp.WSGIApplication([
 		('/', MainHandler),
-		('/create', CreateHandler),
 		('/join', JoinHandler),
 		('/leave', LeaveHandler),
 		('/say', SayHandler),
 		(r'/chat/(.*)/(.*)', ChatHandler)
-	], debug=True)
+	], debug=local)
 	util.run_wsgi_app(application)
 
 if __name__ == '__main__':
