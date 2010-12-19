@@ -38,17 +38,34 @@
 	}
 	div.row {
 		margin: 2px 0;
+		line-height: 25px;
 	}
 	#current #line {
 		float: left;		
-		width: 89%;
+		width: 88%;
+		margin-right: 1%;
 	}
 	input {
-		height: 17px;
-		margin: 2px 0px;
+		height: 25px;
+		margin: 0;
 	}
 	#current #send {
 		width: 10%;
+	}
+	
+	#change-username {
+		width: 500px;
+	}
+
+	#new-username {
+		width: 65%;
+		margin-right: 1%;
+		float: left;
+	}
+
+	#change {
+		float: left;
+		width: 33%;
 	}
 {% endblock %}
 
@@ -171,9 +188,9 @@
 </div>
 
 <br class="clear"/>
-<div class="row">
-	<button id="change" class="button" >Change Username</button>
+<div id="change-username" class="row">
 	<input type="text" id="new-username" value="guest{{ users }}" size="40" />
+	<button id="change" class="button" >change username</button>
 </div>
 
 <div id="dialog-message" title="Error" class="hidden">
