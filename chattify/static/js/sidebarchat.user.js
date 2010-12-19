@@ -16,27 +16,25 @@
 			if( twttr == undefined )
 				setTimeout(handler, 500); // sleep a bit and try again
 			// yay, we have access, add our modifications
-			debugger;
 			twttr.mediaType("twttr.media.types.Chattify", {
 				icon: "generic", 
 				domain: "http://chattify.appspot.com", 
 				matchers: {
-					media:/imgur.com\/([a-zA-Z0-9\.]+)/g
+					media:/chattify.appspot.com\/chat\/([a-zA-Z0-9\.]+)/g
 				},
-				/*
-				process: function(next) {					
+				process: function(next) {
 					// if link is http://imgur.com, ext usually missing
 					if( this.slug.indexOf('.') < 0 ) 
-						this.slug = this.slug + '.jpg';
+						this.slug = this.slug;
 					this.data.src = this.slug;
 					this.data.name = this.constructor._name;
+					this.data.channel = this.tweet.id;
+					this.data.name = $('#screen-name').html().replace(/^\s+|\s+$/g, '');
 					next()
 				},
-				*/
 				render:function(el) {
-					//var markup = '<div class="twitpic"><a class="inline-media-image" data-inline-type="{name}" href="http://i.imgur.com/{src}" target="_blank"><img src="http://i.imgur.com/{src}" /></a>';                
-					markup = "<iframe src='http://cw.gabbly.com/gabbly/cw.jsp?e=1&t=twitter.com' scrolling='no' style='width:300px; height:250px' frameborder='0'></iframe>";
-					$(el).append(twttr.supplant(A,this.data))
+					var markup = "<iframe src='http://chattify.appspot.com/chat/{src}/{name}' scrolling='no' style='width:370px; height:500px' frameborder='0'></iframe>";
+					$(el).append(twttr.supplant(markup,this.data))
 				}
 		});
 		}

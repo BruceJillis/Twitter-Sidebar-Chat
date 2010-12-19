@@ -70,7 +70,6 @@ class ChatHandler(webapp.RequestHandler):
 		else:
 			host = 'http://chattify.appspot.com/'
 		counter.increment('users')
-		counter.increment('chats')
 		users = counter.get_count('users') + 1
 		self.response.out.write(template.render(path, {
 			'key': key,
@@ -80,6 +79,12 @@ class ChatHandler(webapp.RequestHandler):
 			'users': users
 		}))
 
+class NewNameHandler(webapp.RequestHandler):
+	def get(self, title):
+		counter.increment('users')
+		users = counter.get_count('users')
+		self.redirect("/chat/"+title+"/guest"+str(users));
+		
 class MainHandler(webapp.RequestHandler):
 	def get(self):
 		path = os.path.join(TEMPLATES, 'index.html')
@@ -88,11 +93,9 @@ class MainHandler(webapp.RequestHandler):
 		else:
 			host = 'http://chattify.appspot.com/'
 		users = counter.get_count('users') + 1
-		chats = counter.get_count('chats') + 1
 		self.response.out.write(template.render(path, {
 			'host': host,
 			'users': users,
-			'chats': chats,
 			'active': channels
 		}))
 
@@ -102,7 +105,8 @@ def main():
 		('/join', JoinHandler),
 		('/leave', LeaveHandler),
 		('/say', SayHandler),
-		(r'/chat/(.*)/(.*)', ChatHandler)
+		(r'/chat/(.*)/(.*)', ChatHandler),
+		(r'/chat/(.*)/?', NewNameHandler)
 	], debug=local)
 	util.run_wsgi_app(application)
 

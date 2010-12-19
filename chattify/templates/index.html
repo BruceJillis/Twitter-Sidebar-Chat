@@ -83,33 +83,41 @@
 {% endblock %}
 
 {% block content %}
-<strong>Currently Active Chats:</strong>
-<br class="clear" />
-{% for chat in active %}
-    <strong class="active link">{{ chat }}</strong>{% if not forloop.last %}, &nbsp;{% endif %}
-{% endfor %}
-<br class="clear" />
-<form id="create">
-	<div class="row">
-		<label for="channel">Chat Name</label>
-		<input type="text" name="channel" id="channel" value="chat{{ chats }}" />
-		<p class="form-hint" >This value is used to name the underlying chat channel.</p> 
+	<div id="outer">
+		<div id="header">
+			<h1><a href="{{ host }}">Chattify</a></h1>
+		</div>
+		<div id="content">
+			<strong>Currently Active Chats:</strong>
+			<br class="clear" />
+			{% for chat in active %}
+				<strong class="active link">{{ chat }}</strong>{% if not forloop.last %}, &nbsp;{% endif %}
+			{% endfor %}
+			<br class="clear" />
+			<br class="clear" />
+			<form id="create">
+				<div class="row">
+					<label for="channel">Chat Name</label>
+					<input type="text" name="channel" id="channel" value="main channel" />
+					<p class="form-hint" >This value is used to name the underlying chat channel.</p> 
+				</div>
+				<div class="row">
+					<label for="username">Username</label>
+					<input type="text" name="username" id="username" value="guest{{ users }}" />
+					<p class="form-hint" >This your name that will be used to send messages to the channel.</p> 
+				</div>
+
+				<br class="clear" />
+				<input type="submit" class="button" value="Create Chat!" id="button" />
+			</form>
+
+			<br class="clear" />
+			<p>Install the automatice greasemonkey script to enable chattify integration into #newtwitter</p>
+			<a href="/js/sidebarchat.user.js" class="button">Install the script!</a>
+
+			<br class="clear" />
+			<h2>built by <a href="http://twitter.com/BruceJillis">@BruceJillis</a></h2>
+			<h3>based on discussions with <a href="http://twitter.com/kruithoph">@kruithoph</a></h3>
+		</div>
 	</div>
-	<div class="row">
-		<label for="username">Username</label>
-		<input type="text" name="username" id="username" value="guest{{ users }}" />
-		<p class="form-hint" >This your name that will be used to send messages to the channel.</p> 
-	</div>
-
-	<br class="clear" />
-	<input type="submit" class="button" value="Create Chat!" id="button" />
-</form>
-
-<br class="clear" />
-<p>Install the automatice greasemonkey script to enable chattify integration into #newtwitter</p>
-<a href="/js/sidebarchat.user.js" class="button">Install the script!</a>
-
-<br class="clear" />
-<h2>built by <a href="http://twitter.com/BruceJillis">@BruceJillis</a></h2>
-<h3>based on discussions with <a href="http://twitter.com/kruithoph">@kruithoph</a></h3>
 {% endblock %}

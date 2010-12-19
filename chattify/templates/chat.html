@@ -3,12 +3,22 @@
 {% block subtitle %} - Really simple webchat{% endblock %}
 
 {% block css %} 
+	html, body {
+		width: 100%;
+		height: 100%;
+		margin: 0;
+		padding: 0;
+		overflow: hidden;
+	}
+
 	#chat {
-		width: 500px;
+		width: 100%;
+		height: 100%;
 	}
 	#chat #history {
 		width: 100%;
-		height: 250px;
+		height: 79%;
+		border: 1px solid grey;
 		overflow-x: hidden;
 		overflow-y: scroll;
 		clear: both;
@@ -24,11 +34,12 @@
 		max-width: 80px;
 		overflow: hidden;
 		float: left;
+		font-weight: bold;
 	}
 	#chat #history .line .text {
 		float: left;
 		margin-left: 5px;
-		max-width: 400px;
+		max-width: 267px;
 		word-wrap: break-word;
 	}
 	#current {
@@ -42,30 +53,12 @@
 	}
 	#current #line {
 		float: left;		
-		width: 88%;
+		width: 99%;
 		margin-right: 1%;
 	}
 	input {
 		height: 25px;
 		margin: 0;
-	}
-	#current #send {
-		width: 10%;
-	}
-	
-	#change-username {
-		width: 500px;
-	}
-
-	#new-username {
-		width: 65%;
-		margin-right: 1%;
-		float: left;
-	}
-
-	#change {
-		float: left;
-		width: 33%;
 	}
 {% endblock %}
 
@@ -79,8 +72,6 @@
 		}
 		
 		function send() {
-			// temporarily disable the button
-			$('#send').button('disable');
 			// don't send empty lines
 			if( $('#line').val() == '' )
 				return;
@@ -88,8 +79,6 @@
 			interface.send('/say', 'username=' + state.username + '&msg=' + $('#line').val());
 			// clean up
 			$('#line').val('');
-			// enable the button again
-			$('#send').button('enable');
 		}
 
 		var interface = {
@@ -101,24 +90,23 @@
 					if( ev.keyCode == 13 )
 						send();
 				});
-				// send on click
-				$('#send').bind('click', function(ev) {
-					send();
-				});
-				// change the username
-				$('#change').click(function() {
-					document.location.href = "{{ host }}chat/{{ key }}/" + $('#new-username').val();
-				});
 			},
 			'unload': function() {
 				// leave the channel
 				interface.send('/leave', 'username=' + state.username);
 			},
 			'error': function(msg, data) {
+				return;
 				// show error message
 				$('.content', "#dialog-message").html(msg);
 				$("#dialog-message").dialog({
 					modal: true,
+					closeOnEscape: false,
+					draggable: false,
+					beforeClose: function(event, ui) {
+						$(this).dialog("close");
+						document.location.href = '{{ host }}';					
+					},
 					buttons: {
 						Ok: function() {
 							$(this).dialog("close");
@@ -150,11 +138,13 @@
 				xhr.open('POST', path, !sync);
 				xhr.send();
 			},
-			'line': function(username, msg) {
+			'line': function(username, msg, clss) {
+				if( clss == undefined ) 
+					clss = '';
 				// add a new line to the buffer
 				var markup = [
 					'<div class="line">',
-						'<div class="name">@',username,'</div>',
+						'<div class="name ',,'">@',username,'</div>',
 						'<div class="text">',msg,'</div>',
 					'</div>'
 				]
@@ -165,7 +155,6 @@
 		$(document).bind('ready', interface.ready)
 		window.onbeforeunload = interface.unload;
 
-
 		var channel = new goog.appengine.Channel('{{ token }}');
 		var socket = channel.open();
 		socket.onopen = interface.opened;
@@ -175,22 +164,14 @@
 	}
 	var chat = new Chat();
 </script>
-<h3>Welcome, {{ username }}</h3>
-
+<h2 style="float: left;"><a href="{{ host }}">Chattify</a></h2> &nbsp; <h2 style="float: left;">Welcome, {{ username }}</h2>
 <div id="chat">
 	<div id="history">
 	</div>
 	<br class="clear"/>
 	<div id="current" class="row">
 		<input type="text" id="line" value"" />
-		<button id="send" class="button">send</button>
 	</div>
-</div>
-
-<br class="clear"/>
-<div id="change-username" class="row">
-	<input type="text" id="new-username" value="guest{{ users }}" size="40" />
-	<button id="change" class="button" >change username</button>
 </div>
 
 <div id="dialog-message" title="Error" class="hidden">
