@@ -2,13 +2,6 @@
 
 {% block subtitle %} - Really simple webchat{% endblock %}
 
-{% block head %}
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.7/jquery-ui.min.js"></script>
-<script src='/_ah/channel/jsapi'></script>
-{% endblock %}
-
-
 {% block css %} 
 	#chat {
 		width: 500px;
@@ -43,71 +36,101 @@
 		float: left;
 		clear: both;
 	}
-	#current #username {
-		width: 53px;
-		overflow: hidden;
-		float: left;		
+	div.row {
+		margin: 2px 0;
 	}
 	#current #line {
 		float: left;		
-		width: 400px;
+		width: 89%;
+	}
+	input {
+		height: 17px;
+		margin: 2px 0px;
 	}
 	#current #send {
-		width: 43px;
-	}
-	.clear {
-		clear: both;
+		width: 10%;
 	}
 {% endblock %}
 
-{% block js %}
+{% block content %}
+<script src='/_ah/channel/jsapi'></script>
+<script>
 	function Chat() {
 		var state = {
 			'key': '{{ key }}',
 			'username': '{{ username }}'
 		}
+		
+		function send() {
+			// temporarily disable the button
+			$('#send').button('disable');
+			// don't send empty lines
+			if( $('#line').val() == '' )
+				return;
+			// send current line
+			interface.send('/say', 'username=' + state.username + '&msg=' + $('#line').val());
+			// clean up
+			$('#line').val('');
+			// enable the button again
+			$('#send').button('enable');
+		}
 
 		var interface = {
 			'ready': function() {
-				// send button
-				$('#send').button();
-				$('#send').bind('click', function(ev) {
-					// don't send empty lines
-					if( $('#line').val() == '' )
-						return;
-					// send current line
-					interface.send('/say', 'username=' + state.username + '&msg=' + $('#line').val());
-					// clean up
-					$('#line').val('')
+				// create buttons
+				$('.button').button();
+				// send on press of the enter key
+				$('#line').bind('keydown', function(ev) {
+					if( ev.keyCode == 13 )
+						send();
 				});
-				// position chat widget
-				$('#chat').position({
-					'of': $('#chat').parent(),
-					'my': 'center center',
-					'at': 'center center'
+				// send on click
+				$('#send').bind('click', function(ev) {
+					send();
+				});
+				// change the username
+				$('#change').click(function() {
+					document.location.href = "{{ host }}chat/{{ key }}/" + $('#new-username').val();
 				});
 			},
 			'unload': function() {
 				// leave the channel
 				interface.send('/leave', 'username=' + state.username);
 			},
+			'error': function(msg, data) {
+				// show error message
+				$('.content', "#dialog-message").html(msg);
+				$("#dialog-message").dialog({
+					modal: true,
+					buttons: {
+						Ok: function() {
+							$(this).dialog("close");
+							document.location.href = '{{ host }}';
+						}
+					}
+				});
+			},
 			'message': function(answer) {
 				// send message on channel
 				var data = eval('('+answer.data+')');
-				interface.line(data.username, data.msg)
+				if( 'error' in data ) 
+					interface.error(data.error, data);
+				else
+					interface.line(data.username, data.msg)
 			},
 			'opened': function(answer) {
 				// join the channel
-				interface.send('/join', 'username=' + state.username);
+				interface.send('/join', 'username=' + state.username, true);
 			},
-			'send': function(path, opt_param) {
+			'send': function(path, opt_param, sync) {
+				if( sync == undefined )
+					sync = false
 				// send message
 				path += '?key=' + state.key;
-				if (opt_param) {
+				if (opt_param)
 					path += '&' + opt_param;
-				}
 				var xhr = new XMLHttpRequest();
-				xhr.open('POST', path, true);
+				xhr.open('POST', path, !sync);
 				xhr.send();
 			},
 			'line': function(username, msg) {
@@ -133,16 +156,32 @@
 		return interface;
 	}
 	var chat = new Chat();
-{% endblock %}
+</script>
+<h3>Welcome, {{ username }}</h3>
 
-{% block content %}
 <div id="chat">
 	<div id="history">
 	</div>
 	<br class="clear"/>
-	<div id="current">
-		<div id="username">@{{username}}</div> <input type="text" id="line" value"" size="60" />
-		<button id="send">send</button>
+	<div id="current" class="row">
+		<input type="text" id="line" value"" />
+		<button id="send" class="button">send</button>
 	</div>
+</div>
+
+<br class="clear"/>
+<div class="row">
+	<button id="change" class="button" >Change Username</button>
+	<input type="text" id="new-username" value="guest{{ users }}" size="40" />
+</div>
+
+<div id="dialog-message" title="Error" class="hidden">
+	<p>
+		<span class="ui-icon ui-icon-circle-check" style="float:left; margin:0 7px 50px 0;"></span>
+		<span id="title">An error has occured:</span>
+	</p>
+	<p class="content">
+		Please try again later.
+	</p>
 </div>
 {% endblock %}

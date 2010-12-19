@@ -44,31 +44,65 @@
 		float: left;
 		position: relative;
 	}
-
-
-	.clear {
-		clear: both;
+	
+	#install {
+		text-decoration: none;
 	}
 {% endblock %}
 
+{% block js %}
+	$(document).bind('ready', function() {
+		// change all buttons to jquery ui buttons
+		$('.button').button();
+		// enable clicks on active chats
+		$('.active').bind('click', function() {
+			$('#channel').val($(this).html());
+			$('#button').val('Join Chat!');
+		})
+		// change button text
+		$('#channel').bind('keydown', function() {
+			$('#button').val('Create Chat!');
+		})
+		// create button
+		$('#create').submit(function( ev ) {
+			ev.preventDefault();
+			$('#channel').slugify();
+			$('#username').slugify();
+			if($('#channel').val() == '')
+				return;
+			if($('#username').val() == '')
+				return;
+			document.location.href = '/chat/' + $('#channel').val() + '/' + $('#username').val();
+		});
+	})
+{% endblock %}
+
 {% block content %}
-<form action="/create">
+<h3>Currently Active Chats</h3>
+{% for chat in active %}
+    <h4 class="active link">{{ chat }}</h4>
+{% endfor %}
+<form id="create">
 	<div class="row">
 		<label for="channel">Chat Name</label>
-		<input type="text" name="channel" />
+		<input type="text" name="channel" id="channel" value="chat{{ chats }}" />
 		<p class="form-hint" >This value is used to name the underlying chat channel.</p> 
 	</div>
 	<div class="row">
 		<label for="username">Username</label>
-		<input type="text" name="username" />
+		<input type="text" name="username" id="username" value="guest{{ users }}" />
 		<p class="form-hint" >This your name that will be used to send messages to the channel.</p> 
 	</div>
 
 	<br class="clear" />
-	<input type="submit" class="button" value="Create Chat!" />
+	<input type="submit" class="button" value="Create Chat!" id="button" />
 </form>
 
 <br class="clear" />
 <p>Install the automatice greasemonkey script to enable chattify integration into #newtwitter</p>
-<a href="/js/sidebarchat.user.js">Install the script!</a>
+<a href="/js/sidebarchat.user.js" class="button">Install the script!</a>
+
+<br class="clear" />
+<h2>built by <a href="http://twitter.com/BruceJillis">@BruceJillis</a></h2>
+<h3>based on discussions with <a href="http://twitter.com/kruithoph">@kruithoph</a></h3>
 {% endblock %}
