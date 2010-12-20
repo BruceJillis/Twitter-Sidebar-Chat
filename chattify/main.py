@@ -80,7 +80,10 @@ class NewNameHandler(webapp.RequestHandler):
 	def get(self, title):
 		counter.increment('users')
 		users = counter.get_count('users')
-		self.redirect("/chat/"+title+"/guest"+str(users));
+		if title == '':
+			self.redirect("/");
+		else:
+			self.redirect("/chat/"+title+"/guest"+str(users));
 		
 class MainHandler(webapp.RequestHandler):
 	def get(self):
